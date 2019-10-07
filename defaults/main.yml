@@ -1,2 +1,29 @@
 ---
 # Role default lower priority variables
+
+# List of dicts with groups to setup managed_by attribute. The dicts have the
+# following structure:
+#
+# {
+#  group: <group>           # Group to be configured
+#  manager: <sam_account>   # User or group that manages the group
+#  manage_enabled: <yes_no> # Indicates if the management is enabled
+#  domain_server: <server>  # Specifies Active Directory server to connect to
+#  state: <present_absent>  # Can be present or absent
+# }
+#
+# Example:
+#
+# win_domain_groups_managedby:
+#   - group: app1_group
+#     manager: app_admin
+#     manage_enabled: yes
+#     domain_server: server
+#     state: present
+
+win_domain_groups_managedby: []
+
+# Dicitionary with the defaults options to use if no other ones are specified in
+# the `win_domain_groups_managedby` variable.
+
+win_domain_groups_managedby_defaults: {}

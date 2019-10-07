@@ -1,0 +1,323 @@
+---
+
+- name: Test win_domain_group_managedby module
+  vars:
+    powershell_command_state_check: >-
+      powershell.exe "
+          $g = Get-AdGroup `
+            -Identity '{{ test_group }}' `
+            -Properties * `
+            -ErrorAction:Ignore
+          $m=If($(( `
+              Get-Acl -Path \"AD:\$($g.distinguishedName)\").sddl.split(')(') `
+              | Where-Object{$_ -match (get-adgroup -Identity '{{ test_manager }}').SID.value }) `
+            ) { $True } Else { $False }
+          [ordered]@{
+            group=$g
+            manage_enabled=$m
+          }| ConvertTo-Json -Depth 1
+          "
+  block:
+    - name: Erasing and recreating groups, prevent ACL weirdness
+      win_command: |-
+        powershell.exe "
+          ForEach ($group in '{{ test_group }}','{{ test_group2 }}','{{ test_manager }}','{{ test_manager2 }}') {
+            $ou = '{{ test_ou }}'
+            Get-ADGroup $group | Remove-ADGroup -Confirm:$False -ErrorAction:Ignore
+            New-ADGroup $group -Path $ou -GroupCategory Security -GroupScope Global
+          }
+        "
+
+    - name: 'Group Managedby - query'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        domain_server: "{{ test_domain_server }}"
+        state: query
+      register: cmd_result
+
+    - name: 'Group Managedby - query check results'
+      win_command: "{{ powershell_command_state_check }}"
+      register: cmd_result_actual
+      changed_when: no
+
+    - name: 'Group Managedby - assertions'
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+        cmd_result_actual_manager: >-
+          {{ (cmd_result_actual_json.group.ManagedBy is none)
+             | ternary(none,
+                       (cmd_result_actual_json.group.ManagedBy
+                        | string).split(',')[0].split('=')[1]) }}
+      assert:
+        that:
+          - cmd_result.value.group == (cmd_result_actual.stdout | from_json).group.Name
+          - cmd_result.value.manage_enabled == cmd_result_actual_json.manage_enabled
+          - >-
+            (cmd_result.value.manager is none
+            and  cmd_result_actual_json.group.ManagedBy is none
+            ) or (cmd_result.value.manager == cmd_result_actual_manager)
+
+    - name: Clean test group
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        domain_server: "{{ test_domain_server }}"
+        state: absent
+      register: cmd_result
+      tags:
+        - test::win_domain_groups_managedby::library::clean
+
+    - name: Clean test group - check results
+      win_command: "{{ powershell_command_state_check }}"
+      register: cmd_result_actual
+      changed_when: no
+
+    - name: Clean test group - query results
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        domain_server: "{{ test_domain_server }}"
+        state: query
+      register: cmd_query_result
+
+    - name: Clean test group - assertions
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+      assert:
+        that:
+          - test_group == cmd_result.value.group
+          - test_group == cmd_query_result.value.group
+          - test_group == cmd_result_actual_json.group.Name
+          - false == cmd_result.value.manage_enabled
+          - false == cmd_query_result.value.manage_enabled
+          - false == cmd_result_actual_json.manage_enabled
+          - None == cmd_result.value.manager
+          - None == cmd_query_result.value.manager
+          - None == cmd_result_actual_json.group.ManagedBy
+          - cmd_result.value.state == "absent"
+          - cmd_query_result.value.state == "absent"
+
+
+    - name: 'Group Managedby - assertions (Clean test group)'
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+        cmd_result_actual_manager: >-
+          {{ (cmd_result_actual_json.group.ManagedBy is none)
+             | ternary(none,
+                       (cmd_result_actual_json.group.ManagedBy
+                        | string).split(',')[0].split('=')[1]) }}
+      assert:
+        that:
+          - cmd_result.value.group == (cmd_result_actual.stdout | from_json).group.Name
+          - cmd_result.value.manage_enabled == cmd_result_actual_json.manage_enabled
+          - >-
+            (cmd_result.value.manager is none
+            and  cmd_result_actual_json.group.ManagedBy is none
+            ) or (cmd_result.value.manager == cmd_result_actual_manager)
+
+    - name: 'Group Managedby - set and enabled (check mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        manager: "{{ test_manager }}"
+        manage_enabled: Yes
+        domain_server: "{{ test_domain_server }}"
+        state: present
+      register: cmd_result
+      check_mode: yes
+
+    - name: 'Group Managedby - set and enabled, get results (check mode)'
+      win_command: "{{ powershell_command_state_check }}"
+      register: cmd_result_actual
+      changed_when: no
+
+    - name: 'Group Managedby - set and enabled, check results (check mode)'
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+      assert:
+        that:
+          - test_group == cmd_result.value.group
+          - test_group == cmd_result_actual_json.group.Name
+          - true == cmd_result.value.manage_enabled
+          - false == cmd_result_actual_json.manage_enabled
+          - test_manager == cmd_result.value.manager
+          - None == cmd_result_actual_json.group.ManagedBy
+          - cmd_result.value.state == "present"
+
+    - name: 'Group Managedby - set and enabled (diff mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        manager: "{{ test_manager }}"
+        manage_enabled: Yes
+        domain_server: "{{ test_domain_server }}"
+        state: present
+      register: cmd_result
+      diff: yes
+
+    - name: 'Group Managedby - set and enabled, get results (diff mode)'
+      win_command: "{{ powershell_command_state_check }}"
+      register: cmd_result_actual
+      changed_when: no
+
+    - name: 'Group Managedby - set and enabled, query results (diff mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        domain_server: "{{ test_domain_server }}"
+        state: query
+      register: cmd_query_result
+
+    - name: 'Group Managedby - set and enabled, check results (diff mode)'
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+        correct_after: "group: {{ test_group }}\nmanager: {{ test_manager }}\nmanage_enabled: True\nstate: present\n"
+        correct_before: "group: {{ test_group }}\nmanage_enabled: False\nstate: absent\n"
+      assert:
+        that:
+          - test_group == cmd_result.value.group
+          - test_group == cmd_query_result.value.group
+          - test_group == cmd_result_actual_json.group.Name
+          - true == cmd_result.value.manage_enabled
+          - true == cmd_query_result.value.manage_enabled
+          - true == cmd_result_actual_json.manage_enabled
+          - test_manager == cmd_result.value.manager
+          - test_manager == cmd_query_result.value.manager
+          - test_manager == (cmd_result_actual_json.group.ManagedBy | string).split(',')[0].split('=')[1]
+          - cmd_result.value.state == "present"
+          - cmd_query_result.value.state == "present"
+          - cmd_result.diff.after == correct_after
+          - cmd_result.diff.before == correct_before
+
+    - name: 'Group Managedby - set and disabled (check mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        manager: "{{ test_manager }}"
+        manage_enabled: No
+        domain_server: "{{ test_domain_server }}"
+        state: present
+      register: cmd_result
+      check_mode: yes
+
+    - name: 'Group Managedby - set and disabled, get results (check mode)'
+      win_command: "{{ powershell_command_state_check }}"
+      register: cmd_result_actual
+      changed_when: no
+
+    - name: 'Group Managedby - set and disabled, check results (check mode)'
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+      assert:
+        that:
+          - test_group == cmd_result.value.group
+          - test_group == cmd_result_actual_json.group.Name
+          - false == cmd_result.value.manage_enabled
+          - true == cmd_result_actual_json.manage_enabled
+          - test_manager == cmd_result.value.manager
+          - test_manager == (cmd_result_actual_json.group.ManagedBy | string).split(',')[0].split('=')[1]
+          - cmd_result.value.state == "present"
+
+    - name: 'Group Managedby - set and disabled (diff mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        manager: "{{ test_manager }}"
+        manage_enabled: No
+        domain_server: "{{ test_domain_server }}"
+        state: present
+      register: cmd_result
+      diff: yes
+
+    - name: 'Group Managedby - set and disabled, get results (diff mode)'
+      win_command: "{{ powershell_command_state_check }}"
+      register: cmd_result_actual
+      changed_when: no
+
+    - name: 'Group Managedby - set and disabled, query results (diff mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        domain_server: "{{ test_domain_server }}"
+        state: query
+      register: cmd_query_result
+
+    - name: 'Group Managedby - set and disabled, check results (diff mode)'
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+        correct_after: "group: {{ test_group }}\nmanager: {{ test_manager }}\nmanage_enabled: False\nstate: present\n"
+        correct_before: "group: {{ test_group }}\nmanager: {{ test_manager }}\nmanage_enabled: True\nstate: present\n"
+      assert:
+        that:
+          - test_group == cmd_result.value.group
+          - test_group == cmd_query_result.value.group
+          - test_group == cmd_result_actual_json.group.Name
+          - false == cmd_result.value.manage_enabled
+          - false == cmd_query_result.value.manage_enabled
+          - false == cmd_result_actual_json.manage_enabled
+          - test_manager == cmd_result.value.manager
+          - test_manager == cmd_query_result.value.manager
+          - test_manager == (cmd_result_actual_json.group.ManagedBy | string).split(',')[0].split('=')[1]
+          - cmd_result.value.state == "present"
+          - cmd_query_result.value.state == "present"
+          - cmd_result.diff.after == correct_after
+          - cmd_result.diff.before == correct_before
+
+    - name: 'Group Managedby - remove manager (check mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        domain_server: "{{ test_domain_server }}"
+        state: absent
+      register: cmd_result
+      check_mode: yes
+
+    - name: 'Group Managedby - remove manager, get results (check mode)'
+      win_command: "{{ powershell_command_state_check }}"
+      register: cmd_result_actual
+      changed_when: no
+
+    - name: 'Group Managedby - remove manager, check results (check mode)'
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+      assert:
+        that:
+          - test_group == cmd_result.value.group
+          - test_group == cmd_result_actual_json.group.Name
+          - false == cmd_result.value.manage_enabled
+          - false == cmd_result_actual_json.manage_enabled
+          - None == cmd_result.value.manager
+          - test_manager == (cmd_result_actual_json.group.ManagedBy | string).split(',')[0].split('=')[1]
+          - cmd_result.value.state == "absent"
+
+    - name: 'Group Managedby - remove manager (diff mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        domain_server: "{{ test_domain_server }}"
+        state: absent
+      register: cmd_result
+      diff: yes
+
+    - name: 'Group Managedby - remove manager, get results (diff mode)'
+      win_command: "{{ powershell_command_state_check }}"
+      register: cmd_result_actual
+      changed_when: no
+
+    - name: 'Group Managedby - remove manager, query results (diff mode)'
+      win_domain_groups_managedby:
+        group: "{{ test_group }}"
+        domain_server: "{{ test_domain_server }}"
+        state: query
+      register: cmd_query_result
+
+    - name: 'Group Managedby - remove manager, check results (diff mode)'
+      vars:
+        cmd_result_actual_json: "{{ cmd_result_actual.stdout | from_json }}"
+        correct_after: "group: {{ test_group }}\nmanage_enabled: False\nstate: absent\n"
+        correct_before: "group: {{ test_group }}\nmanager: {{ test_manager }}\nmanage_enabled: False\nstate: present\n"
+      assert:
+        that:
+          - test_group == cmd_result.value.group
+          - test_group == cmd_query_result.value.group
+          - test_group == cmd_result_actual_json.group.Name
+          - false == cmd_result.value.manage_enabled
+          - false == cmd_query_result.value.manage_enabled
+          - false == cmd_result_actual_json.manage_enabled
+          - None == cmd_result.value.manager
+          - None == cmd_query_result.value.manager
+          - None == cmd_result_actual_json.group.ManagedBy
+          - cmd_result.value.state == "absent"
+          - cmd_query_result.value.state == "absent"
+          - cmd_result.diff.after == correct_after
+          - cmd_result.diff.before == correct_before

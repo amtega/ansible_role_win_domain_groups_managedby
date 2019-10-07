@@ -1,2 +1,64 @@
 ---
 # Role tasks
+
+- name: Check availability of cmdlets
+  win_shell: |
+    if (
+        (Get-Command -Name Get-ADRootDSE -ErrorAction SilentlyContinue) `
+        -and `
+        (Get-Command -Name New-PSDrive -ErrorAction SilentlyContinue) `
+        -and `
+        (Get-Command -Name Get-ADObject -ErrorAction SilentlyContinue) `
+        -and `
+        (Get-Command -Name Get-AdGroup -ErrorAction SilentlyContinue) `
+        -and `
+        (Get-Command -Name Set-ADGroup -ErrorAction SilentlyContinue) `
+        -and `
+        (Get-Command -Name Get-Acl -ErrorAction SilentlyContinue) `
+        -and `
+        (Get-Command -Name Set-ACL -ErrorAction SilentlyContinue) `
+    ) {
+        $true
+    } else {
+        $false
+    }
+  register: win_domain_groups_managedby_cmdlets_check
+  changed_when: no
+  check_mode: no
+  tags:
+    - role::win_domain_groups_managedby
+    - role::win_domain_groups_managedby::check
+
+- name: Assert availability of cmdlets
+  assert :
+    that:
+      - (win_domain_groups_managedby_cmdlets_check.stdout | trim | bool)
+
+- name: Setup windows organizational units (OU)
+  win_domain_groups_managedby:
+    group: >-
+      {{ win_domain_groups_managedby_item.group
+         | default(win_domain_groups_managedby_defaults.group)
+         | default(omit) }}
+    manager: >-
+      {{ win_domain_groups_managedby_item.manager
+         | default(win_domain_groups_managedby_defaults.manager)
+         | default(omit) }}
+    manage_enabled: >-
+      {{ win_domain_groups_managedby_item.manage_enabled
+         | default(win_domain_groups_managedby_defaults.manage_enabled)
+         | default(omit) }}
+    domain_server: >-
+      {{ win_domain_groups_managedby_item.domain_server
+         | default(win_domain_groups_managedby_defaults.domain_server)
+         | default(omit) }}
+    state: >-
+      {{ win_domain_groups_managedby_item.state
+         | default(win_domain_groups_managedby_defaults.state)
+         | default(omit) }}
+  loop: "{{ win_domain_groups_managedby }}"
+  loop_control:
+    loop_var: win_domain_groups_managedby_item
+    label: "{{ win_domain_groups_managedby_item.group }}"
+  tags:
+    - role::win_domain_groups_managedby
