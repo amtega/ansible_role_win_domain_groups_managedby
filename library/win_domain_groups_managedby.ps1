@@ -18,7 +18,6 @@ $spec = @{
 
 $module = [Ansible.Basic.AnsibleModule]::Create($args, $spec)
 
-
 $domain_server = $module.Params.domain_server
 $group = $module.Params.group
 $manager = $module.Params.manager
@@ -119,7 +118,6 @@ Function Get-CurrentState($desired_state) {
   return $initial_state
 }
 
-
 # ------------------------------------------------------------------------------
 Function Get-GroupManagedEnabled($group, $manager) {
   If ($manager) {
@@ -201,7 +199,6 @@ Function Set-GroupManagedEnabled($group, $manager, $manage_enabled) {
   $module.Result.changed = $true
 }
 
-
 # ------------------------------------------------------------------------------
 Function ConvertTo-SerializedState($state) {
   return @(
@@ -273,7 +270,6 @@ if ($module.CheckMode) {
 
 $after_state.Remove("_") # Hack (cleaning previous hack)
 $module.Result.value = $after_state
-
 
 $module.Diff.before = ConvertTo-SerializedState $initial_state
 $module.Diff.after  = ConvertTo-SerializedState $after_state
