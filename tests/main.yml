@@ -1,2 +1,29 @@
 ---
 # Tasks for testing role
+
+- name: Run win_domain_groups_managedby test
+  hosts: "{{ win_domain_groups_managedby_tests_host }}"
+  vars:
+    test_group: "{{ win_domain_groups_managedby_group }}"
+    test_group2: "{{ win_domain_groups_managedby_group2 }}"
+    test_manager: "{{ win_domain_groups_managedby_manager }}"
+    test_manager2: "{{ win_domain_groups_managedby_manager2 }}"
+    test_manage_enabled: "{{ win_domain_groups_managedby_manage_enabled }}"
+    test_domain_server: "{{ win_domain_groups_managedby_domain_server }}"
+    test_ou: "{{ win_domain_groups_managedby_ou }}"
+  tasks:
+
+    - import_tasks: tasks/check.yml
+      tags:
+        - test::win_domain_groups_managedby
+        - test::win_domain_groups_managedby::pre-check
+
+    - import_tasks: tasks/module.yml
+      tags:
+        - test::win_domain_groups_managedby
+        - test::win_domain_groups_managedby::library
+
+    - import_tasks: tasks/role.yml
+      tags:
+        - test::win_domain_groups_managedby
+        - test::win_domain_groups_managedby::role
