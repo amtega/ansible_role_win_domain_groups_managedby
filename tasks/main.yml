@@ -34,7 +34,7 @@
     that:
       - (win_domain_groups_managedby_cmdlets_check.stdout | trim | bool)
 
-- name: Setup windows organizational units (OU)
+- name: Setup windows groups managedby attribute
   win_domain_groups_managedby:
     group: >-
       {{ win_domain_groups_managedby_item.group
