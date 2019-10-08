@@ -30,7 +30,7 @@
     - role::win_domain_groups_managedby::check
 
 - name: Assert availability of cmdlets
-  assert :
+  assert:
     that:
       - (win_domain_groups_managedby_cmdlets_check.stdout | trim | bool)
 
