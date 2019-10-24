@@ -27,3 +27,7 @@ win_domain_groups_managedby: []
 # the `win_domain_groups_managedby` variable.
 
 win_domain_groups_managedby_defaults: {}
+
+# Hide sensitive information
+
+win_domain_groups_managedby_no_log: yes

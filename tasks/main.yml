@@ -25,6 +25,7 @@
   register: win_domain_groups_managedby_cmdlets_check
   changed_when: no
   check_mode: no
+  no_log: "{{ win_domain_groups_managedby_no_log }}"
   tags:
     - role::win_domain_groups_managedby
     - role::win_domain_groups_managedby::check
@@ -33,6 +34,7 @@
   assert:
     that:
       - (win_domain_groups_managedby_cmdlets_check.stdout | trim | bool)
+  no_log: "{{ win_domain_groups_managedby_no_log }}"
 
 - name: Setup windows groups managedby attribute
   win_domain_groups_managedby:
@@ -60,5 +62,6 @@
   loop_control:
     loop_var: win_domain_groups_managedby_item
     label: "{{ win_domain_groups_managedby_item.group }}"
+  no_log: "{{ win_domain_groups_managedby_no_log }}"
   tags:
     - role::win_domain_groups_managedby
