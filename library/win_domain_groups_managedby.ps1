@@ -241,7 +241,6 @@ If (($null -ne $initial_state.manager) -and ($initial_state.manager -ne $desired
 }
 
 If (($null -ne $desired_state.manager) -and ($initial_state.manager -ne $desired_state.manager)) {
-  # FIXME: get $desired_state._.group_object
   Set-GroupManagedBy $initial_state._.group_object $desired_state.manager
 }
 
