@@ -22,7 +22,7 @@
     } else {
         $false
     }
-  register: win_domain_groups_managedby_cmdlets_check
+  register: win_domain_groups_managedby_cmdlets_check_result
   changed_when: no
   check_mode: no
   no_log: "{{ win_domain_groups_managedby_no_log }}"
@@ -33,7 +33,7 @@
 - name: Assert availability of cmdlets
   assert:
     that:
-      - (win_domain_groups_managedby_cmdlets_check.stdout | trim | bool)
+      - (win_domain_groups_managedby_cmdlets_check_result.stdout | trim | bool)
   no_log: "{{ win_domain_groups_managedby_no_log }}"
 
 - name: Setup windows groups managedby attribute
