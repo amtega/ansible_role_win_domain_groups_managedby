@@ -9,80 +9,18 @@ dependency:
     role-file: "${MOLECULE_SCENARIO_DIRECTORY}/requirements.yml"
     requirements-file: "${MOLECULE_SCENARIO_DIRECTORY}/requirements.yml"
 driver:
-  name: docker
+  name: vagrant
+  provider:
+    name: virtualbox
 lint: "${MOLECULE_SCENARIO_DIRECTORY}/linters.sh"
 platforms:
-  - name: "centos6-${INSTANCE_UUID:-1}"
-    image: centos:6
-    dockerfile: Dockerfile.centos6.j2
-    # Only required for systemd enabled containers
-    # dockerfile: Dockerfile.systemd.j2
-    # command: /sbin/init
-    # tmpfs:
-    #   - /run
-    #   - /tmp
-    # volumes:
-    #   - /sys/fs/cgroup:/sys/fs/cgroup:ro
+  - name: "WindowsServer-${INSTANCE_UUID:-1}"
+    box: jborean93/WindowsServer2016
+    memory: 2048
     groups:
       - molecule_hosts
-      - molecule_hosts_centos
-      - molecule_hosts_centos_6
-  - name: "centos7-${INSTANCE_UUID:-1}"
-    image: centos:7
-    # Only required for systemd enabled containers
-    # dockerfile: Dockerfile.systemd.j2
-    # command: /sbin/init
-    # tmpfs:
-    #   - /run
-    #   - /tmp
-    # volumes:
-    #   - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    groups:
-      - molecule_hosts
-      - molecule_hosts_centos
-      - molecule_hosts_centos_7
-  - name: "centos8-${INSTANCE_UUID:-1}"
-    image: centos:8
-    # Only required for systemd enabled containers
-    # dockerfile: Dockerfile.systemd.j2
-    # command: /sbin/init
-    # tmpfs:
-    #   - /run
-    #   - /tmp
-    # volumes:
-    #   - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    groups:
-      - molecule_hosts
-      - molecule_hosts_centos
-      - molecule_hosts_centos_8
-  - name: "fedora33-${INSTANCE_UUID:-1}"
-    image: fedora:33
-    # Only required for systemd enabled containers
-    # dockerfile: Dockerfile.systemd.j2
-    # command: /sbin/init
-    # tmpfs:
-    #   - /run
-    #   - /tmp
-    # volumes:
-    #   - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    groups:
-      - molecule_hosts
-      - molecule_hosts_fedora
-      - molecule_hosts_fedora_33
-  - name: "fedora34-${INSTANCE_UUID:-1}"
-    image: fedora:34
-    # Only required for systemd enabled containers
-    # dockerfile: Dockerfile.systemd.j2
-    # command: /sbin/init
-    # tmpfs:
-    #   - /run
-    #   - /tmp
-    # volumes:
-    #   - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    groups:
-      - molecule_hosts
-      - molecule_hosts_fedora
-      - molecule_hosts_fedora_34
+      - molecule_hosts_windows
+      - molecule_hosts_windows_server_2016
 provisioner:
   name: ansible
   config_options:
@@ -92,9 +30,16 @@ provisioner:
   inventory:
     hosts:
       molecule_hosts:
+        hosts:
+          WindowsServer-${INSTANCE_UUID:-1}:
+            ansible_host: 127.0.0.1
+            ansible_user: vagrant
+            ansible_password: vagrant
+            ansible_port: 55986
+            ansible_connection: winrm
+            ansible_winrm_transport: ntlm
+            ansible_winrm_server_cert_validation: ignore
         vars:
-      molecule_hosts_fedora:
-        vars:
-          ansible_python_interpreter: /usr/bin/python3
+          win_win_domain_groups_managedby_no_log: no
 verifier:
   name: ansible
