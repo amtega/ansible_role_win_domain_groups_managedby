@@ -5,7 +5,8 @@ galaxy_info:
   role_name: win_domain_groups_managedby
   namespace: amtega
   author: Daniel Sánchez Fábregas
-  description: Manages Windows Active Directory groups `managed by` field and ACL.
+  description: >-
+    Manages Windows Active Directory groups `managed by` field and ACL.
   company: AMTEGA - Xunta de Galicia
   license: GPLv3 or EUPL
   min_ansible_version: 2.9
