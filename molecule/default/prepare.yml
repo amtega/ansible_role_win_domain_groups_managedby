@@ -3,3 +3,18 @@
 - name: Prepare
   hosts: molecule_hosts
   gather_facts: no
+  tasks:
+    - name: Ensure the RSAT-AD-PowerShell feature is installed
+      win_feature:
+        name:
+          - RSAT-AD-PowerShell
+        state: present
+      register: ad_feature_result
+      # failed_when: no # HACK Fails in windows 10
+
+    - name: Reboot host if required
+      win_reboot:
+      when: ad_feature_result.reboot_required | default(False)
+
+    - name: Win ping
+      win_ping:
