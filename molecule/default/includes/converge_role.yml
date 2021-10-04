@@ -1,0 +1,26 @@
+---
+
+- name: Unset managedby in several groups
+  include_role:
+    name: amtega.win_domain_groups_managedby
+  vars:
+    win_domain_groups_managedby_defaults:
+      domain_server: "{{ test_domain_server }}"
+      state: absent
+    win_domain_groups_managedby:
+      - group: "{{ test_group[4] }}"
+      - group: "{{ test_group[5] }}"
+
+- name: Set and enable managedby in several groups
+  include_role:
+    name: amtega.win_domain_groups_managedby
+  vars:
+    win_domain_groups_managedby_defaults:
+      domain_server: "{{ test_domain_server }}"
+      state: present
+      manage_enabled: Yes
+    win_domain_groups_managedby:
+      - group: "{{ test_group[6] }}"
+        manager: "{{ test_manager }}"
+      - group: "{{ test_group[7] }}"
+        manager: "{{ test_manager }}"

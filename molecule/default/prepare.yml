@@ -89,6 +89,10 @@
                   '{{ test_group[1] }}',
                   '{{ test_group[2] }}',
                   '{{ test_group[3] }}',
+                  '{{ test_group[4] }}',
+                  '{{ test_group[5] }}',
+                  '{{ test_group[6] }}',
+                  '{{ test_group[7] }}',
                   '{{ test_manager }}'
         ForEach ($group in $groups) {
           $ou = '{{ test_ou }}'
@@ -103,6 +107,8 @@
     - name: Add and enable manager in chosen groups
       loop:
         - "{{ test_group[1] }}"
+        - "{{ test_group[4] }}"
+        - "{{ test_group[5] }}"
       loop_control:
         loop_var: group
       win_domain_groups_managedby:

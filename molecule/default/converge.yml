@@ -7,3 +7,5 @@
     - name: Test module in library/win_domain_groups_managedby.py
       # Needed to pinpoint specific module errors
       ansible.builtin.include_tasks: includes/converge_module.yml
+    - name: Test role
+      ansible.builtin.include_tasks: includes/converge_role.yml

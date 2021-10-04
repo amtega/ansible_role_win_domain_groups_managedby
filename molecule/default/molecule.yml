@@ -47,6 +47,10 @@ provisioner:
             - ansible_test_group1
             - ansible_test_group2
             - ansible_test_group3
+            - ansible_test_group4
+            - ansible_test_group5
+            - ansible_test_group6
+            - ansible_test_group7
           test_manager: ansible_test_group_manager
           test_ou: OU={{ test_ou_name }},{{ test_ou_base }}
           test_ou_name: Test
