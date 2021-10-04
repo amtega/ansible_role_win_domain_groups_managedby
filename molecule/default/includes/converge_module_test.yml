@@ -1,0 +1,91 @@
+---
+
+# Parameters:
+#
+# test_description: xxx
+# module_input:
+#   group_name: "{{ test_group[0] }}"
+#   group_manager: "{{ test_manager }}"
+#   manage_enabled: Yes
+#   state: "present"
+# expected:
+#   group_name: "{{ test_group[0] }}"
+#   group_manager: "{{ test_manager }}"
+#   manage_enabled: Yes
+#   state: "present"
+# mode:
+#   check: No
+#   diff: No
+
+- name: "{{ test_description }}"
+  win_domain_groups_managedby:
+    group: "{{ expected.group_name }}"
+    manager: "{{ module_input.group_manager | default(omit) }}"
+    manage_enabled: "{{ module_input.manage_enabled | default(omit) }}"
+    domain_server: "{{ test_domain_server }}"
+    state: "{{ expected.state }}"
+  register: module_result
+  check_mode: "{{ mode.check }}"
+  diff: "{{ mode.diff }}"
+
+- name: Powershell data retrieval
+  vars:
+    # ⚠️ Obvious refactor leads to broken test (Yeah, weird)
+    powershell_command_state_check: |-
+      $group = Get-AdGroup `
+        -Identity '{{ expected.group_name }}' `
+        -Properties * `
+        -ErrorAction:Ignore
+      $group_acl = Get-ACL -Path ("AD:\" + $group.DistinguishedName)
+      $magic_constatnt = "bf9679c0-0de6-11d0-a285-00aa003049e2"
+      $manage_enabled = If(
+          $($group_acl.Access|?{$_.ObjectType -eq $magic_constatnt})
+        ) { $True } Else { $False }
+      [ordered]@{
+        # group=$group
+        group_name = $(Try { $group.Name } Catch { $null })
+        group_manager = $(Try {
+            $group.ManagedBy -replace 'CN=([^=]*),.*$','$1'
+          } Catch { $null })
+        manage_enabled = $manage_enabled
+      }| ConvertTo-Json -Depth 1
+  win_shell: "{{ powershell_command_state_check }}"
+  register: cmd_state_result
+  changed_when: no
+
+- name: "{{ test_description }}. Cross check."
+  vars:
+    cmd_state_result_json: "{{ cmd_state_result.stdout | from_json }}"
+    group_name: "{{ cmd_state_result_json.group_name }}"
+    manage_enabled: "{{ cmd_state_result_json.manage_enabled }}"
+    group_manager: "{{ cmd_state_result_json.group_manager }}"
+    # Pre baked tests:
+    have_same_group: "{{ module_result.value.group == group_name }}"
+    have_same_manage_enabled_state: >-
+      {{ module_result.value.manage_enabled == manage_enabled }}
+    have_same_manager: >-
+      {{ module_result.value.manager == group_manager
+         or (not module_result.value.manager | default(False)
+             and not group_manager | default(False)) }}
+    have_expected_group_name: "{{ expected.group_name == group_name }}"
+    have_expected_group_manager: >-
+      {{ expected.group_manager == group_manager
+         or (not expected.group_manager | default(False)
+             and not group_manager | default(False)) }}
+    have_expected_manage_enabled: >-
+      {{ expected.manage_enabled == manage_enabled }}
+    have_expected_state: "{{ expected.state == module_result.value.state }}"
+  assert:
+    that:
+      - have_same_group
+      - have_same_manage_enabled_state
+      - have_same_manager
+      - have_expected_group_name
+      - have_expected_group_manager
+      - have_expected_manage_enabled
+      - have_expected_state
+    fail_msg: >-
+      ❌ win_domain_groups_managedby query results differ from powershell
+      or expected values:
+        👍 {{ expected }}
+        👎 {{ cmd_state_result_json }}

@@ -85,8 +85,11 @@
 
     - name: Erasing and recreating groups, prevent ACL weirdness
       win_shell: |-
-        $groups = '{{ test_group }}','{{ test_group2 }}',
-                  '{{ test_manager }}','{{ test_manager2 }}'
+        $groups = '{{ test_group[0] }}',
+                  '{{ test_group[1] }}',
+                  '{{ test_group[2] }}',
+                  '{{ test_group[3] }}',
+                  '{{ test_manager }}'
         ForEach ($group in $groups) {
           $ou = '{{ test_ou }}'
           Get-ADGroup $group |
@@ -96,3 +99,15 @@
             -GroupCategory Security `
             -GroupScope Global
         }
+
+    - name: Add and enable manager in chosen groups
+      loop:
+        - "{{ test_group[1] }}"
+      loop_control:
+        loop_var: group
+      win_domain_groups_managedby:
+        group: "{{ group }}"
+        manager: "{{ test_manager }}"
+        manage_enabled: yes
+        domain_server: "{{ test_domain_server }}"
+        state: present

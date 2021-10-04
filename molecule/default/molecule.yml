@@ -42,11 +42,12 @@ provisioner:
         vars:
           win_win_domain_groups_managedby_no_log: no
           test_domain_server: "{{ inventory_hostname }}"
-          test_group: ansible_test_group
-          test_group2: ansible_test_group2
+          test_group:
+            - ansible_test_group0
+            - ansible_test_group1
+            - ansible_test_group2
+            - ansible_test_group3
           test_manager: ansible_test_group_manager
-          test_manager2: ansible_test_group_manager2
-          test_manage_enabled: yes
           test_ou: OU={{ test_ou_name }},{{ test_ou_base }}
           test_ou_name: Test
           test_ou_base: "DC=test_lab,DC=local"

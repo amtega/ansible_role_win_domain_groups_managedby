@@ -3,5 +3,7 @@
 - name: Converge
   hosts: molecule_hosts
   gather_facts: no
-  roles:
-    - amtega.template
+  tasks:
+    - name: Test module in library/win_domain_groups_managedby.py
+      # Needed to pinpoint specific module errors
+      ansible.builtin.include_tasks: includes/converge_module.yml
