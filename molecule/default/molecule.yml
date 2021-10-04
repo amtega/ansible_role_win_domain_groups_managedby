@@ -40,7 +40,7 @@ provisioner:
             ansible_winrm_transport: ntlm
             ansible_winrm_server_cert_validation: ignore
         vars:
-          win_win_domain_groups_managedby_no_log: no
+          win_domain_groups_managedby_no_log: no
           test_domain_server: "{{ inventory_hostname }}"
           test_group:
             - ansible_test_group0
