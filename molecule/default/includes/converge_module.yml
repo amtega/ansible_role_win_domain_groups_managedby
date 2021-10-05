@@ -1,0 +1,62 @@
+---
+
+- name: Query status
+  ansible.builtin.include_tasks: converge_module_test.yml
+  vars:
+    test_description: Query status
+    module_input:
+      group_name: "{{ test_group[0] }}"
+      state: query
+    expected:
+      group_name: "{{ test_group[0] }}"
+      group_manager: ""
+      manage_enabled: No
+      state: absent
+    mode:
+      check: No
+      diff: No
+
+- name: Remove manager
+  ansible.builtin.include_tasks: converge_module_test.yml
+  vars:
+    test_description: Remove manager
+    module_input:
+      group_name: "{{ test_group[1] }}"
+      manage_enabled: No
+      state: absent
+    expected:
+      group_name: "{{ test_group[1] }}"
+      group_manager:
+      manage_enabled: No
+      state: absent
+    mode:
+      check: No
+      diff: No
+
+- name: Add manager, but disabled
+  ansible.builtin.include_tasks: converge_module_test.yml
+  vars:
+    test_description: Add manager, but disabled
+    module_input:
+      group_name: "{{ test_group[2] }}"
+      group_manager: "{{ test_manager }}"
+      manage_enabled: No
+      state: present
+    expected: "{{ module_input }}"
+    mode:
+      check: No
+      diff: No
+
+- name: Add manager, enabled
+  ansible.builtin.include_tasks: converge_module_test.yml
+  vars:
+    test_description: Add manager, enabled
+    module_input:
+      group_name: "{{ test_group[3] }}"
+      group_manager: "{{ test_manager }}"
+      manage_enabled: Yes
+      state: present
+    expected: "{{ module_input }}"
+    mode:
+      check: No
+      diff: No

@@ -1,0 +1,61 @@
+---
+
+dependency:
+  name: galaxy
+  enabled: yes
+  options:
+    ignore-certs: yes
+    ignore-errors: yes
+    role-file: "${MOLECULE_SCENARIO_DIRECTORY}/requirements.yml"
+    requirements-file: "${MOLECULE_SCENARIO_DIRECTORY}/requirements.yml"
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+lint: "${MOLECULE_SCENARIO_DIRECTORY}/linters.sh"
+platforms:
+  - name: "WindowsServer-${INSTANCE_UUID:-1}"
+    box: jborean93/WindowsServer2016
+    memory: 2048
+    groups:
+      - molecule_hosts
+      - molecule_hosts_windows
+      - molecule_hosts_windows_server_2016
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callback_enabled: profile_tasks
+      action_plugins: $PWD/action_plugins
+  inventory:
+    hosts:
+      molecule_hosts:
+        hosts:
+          WindowsServer-${INSTANCE_UUID:-1}:
+            ansible_host: 127.0.0.1
+            ansible_user: vagrant
+            ansible_password: vagrant
+            ansible_port: 55986
+            ansible_connection: winrm
+            ansible_winrm_transport: ntlm
+            ansible_winrm_server_cert_validation: ignore
+        vars:
+          win_domain_groups_managedby_no_log: no
+          test_domain_server: "{{ inventory_hostname }}"
+          test_group:
+            - ansible_test_group0
+            - ansible_test_group1
+            - ansible_test_group2
+            - ansible_test_group3
+            - ansible_test_group4
+            - ansible_test_group5
+            - ansible_test_group6
+            - ansible_test_group7
+          test_manager: ansible_test_group_manager
+          test_ou: OU={{ test_ou_name }},{{ test_ou_base }}
+          test_ou_name: Test
+          test_ou_base: "DC=test_lab,DC=local"
+          test_domain_name: test_lab.local
+          test_safe_mode_password: insecure_NDYJyQK8Mh7k3yr5
+verifier:
+  name: ansible
