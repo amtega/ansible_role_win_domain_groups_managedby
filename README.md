@@ -48,27 +48,16 @@ This is an example playbook:
 
 ## Testing
 
-To run test you must pass in the command line the variable `win_domain_groups_managedby_tests_host` pointing to a windows host fulfilling the ansible requirements documented in https://docs.ansible.com/ansible/latest/user_guide/windows_setup.html. Also, you must define in the inventory for this host the necessary variables to connect.
-
-Additionally the tests requires the following set of variables that can be defined in the inventory or passed in the command line:
-
-- `win_domain_groups_managedby_ou`: OU where the test groups reside.
-- `win_domain_groups_managedby_group`: Group to be managed during the tests
-- `win_domain_groups_managedby_group2`: Other group to be managed during the tests
-- `win_domain_groups_managedby_manager`: Manager of the test group
-- `win_domain_groups_managedby_manager2`: Other manager of the test group
-- `win_domain_groups_managedby_domain_server`: Specifies the domain server where the Active Directory is modified.
-
-One way to provide all the previous information is calling the testing playbook passing the host to use and an additional vault inventory plus the default one provided for testing, as it's show in this example:
+Tests are based on [molecule with vagrant virtual machines](https://molecule.readthedocs.io/en/latest/installation.html).
 
 ```shell
-$ cd amtega.win_domain_groups/tests
-$ ansible-playbook main.yml -e "win_domain_groups_managedby_tests_host=test_host" -i inventory -i ~/mycustominventory.yml --vault-id myvault@prompt
+cd amtega.win_domain_groups_managedby
+molecule test --all
 ```
 
 ## License
 
-Copyright (C) 2019 AMTEGA - Xunta de Galicia
+Copyright (C) 2022 AMTEGA - Xunta de Galicia
 
 This role is free software: you can redistribute it and/or modify it under the terms of:
 
