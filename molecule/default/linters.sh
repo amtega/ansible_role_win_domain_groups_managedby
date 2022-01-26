@@ -23,3 +23,4 @@ export ANSIBLE_VARS_PLUGINS=$PWD/vars_plugins
 
 yamllint .
 ansible-lint
+flake8
